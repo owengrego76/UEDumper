@@ -337,7 +337,7 @@ inline void addStructs()
 	Tmap.maxSize = Tmap.size;
 	Tmap.noFixedSize = true;
 	Tmap.definedMembers = std::vector<EngineStructs::Member>{
-		{{true,		PropertyType::ObjectProperty,		"TArray"},		"Data",	0, 16},
+		{{true,		PropertyType::ArrayProperty,		"TArray"},		"Data",	0, 16},
 		{{false,		PropertyType::ArrayProperty,		TYPE_UCHAR},		"UnknownData01[0x40]",	16, 0x40},
 	};
 	//add it

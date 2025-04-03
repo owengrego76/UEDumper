@@ -549,16 +549,6 @@ void windows::LiveEditor::drawMemberArrayProperty(const EngineStructs::Member& m
 				ImGui::TreePop();
 				return;
 			}
-			//we get the first pointer so we can check what class the array indexes really are (tarray lies just like pointers)
-			const uint64_t firstIndexPtr = arrBlock->read<uint64_t>(0);
-			//look for the struct
-			if (!isValidStructName(firstIndexPtr, member.type.subTypes[0].name, st, true))
-			{
-				//this should never fail!
-				ImGui::TextColored(IGHelper::Colors::red, "Struct or Class doesnt exist in the SDK!");
-				ImGui::TreePop();
-				return;
-			}
 
 			//create a vector where we will iterate through
 			std::vector<uint64_t> objs(arr.Count);
@@ -579,6 +569,13 @@ void windows::LiveEditor::drawMemberArrayProperty(const EngineStructs::Member& m
 				//create a tree node for it
 				if (ImGui::TreeNode(std::string(std::to_string(i) + " " + member.type.subTypes[0].name + "##" + secret + std::to_string(objPtr)).c_str()))
 				{
+					if (!isValidStructName(objPtr, member.type.subTypes[0].name, st, true))
+					{
+						//this should never fail!
+						ImGui::TextColored(IGHelper::Colors::red, "Struct or Class doesnt exist in the SDK!");
+						ImGui::TreePop();
+						return;
+					}
 					ImGui::PopStyleColor();
 					ImGui::SameLineEx(0);
 					//add the *

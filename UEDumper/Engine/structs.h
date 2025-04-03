@@ -100,7 +100,7 @@ struct FUObjectItem
 };
 
 
-template <class T>
+template<typename T>
 struct TArray
 {
     friend struct FString;
@@ -202,11 +202,13 @@ struct FString : public TArray<wchar_t>
     }
 };
 
-template<typename Key, typename Value>
-class TMap
+template<typename ElementType>
+class TSetElement
 {
 public:
-    char UnknownData[0x50];
+    ElementType                                                Value;                                                   // 0x0000(0x0000)
+    int32_t                                                    HashNextId;                                              // 0x0000(0x0000)
+    int32_t                                                    HashIndex;                                               // 0x0000(0x0000)
 };
 
 class FScriptInterface
@@ -393,22 +395,30 @@ public:
     TPair() {};
 
 public:
-    FORCEINLINE KeyType& Key()
+    FORCEINLINE KeyType& GetKey()
     {
         return First;
     }
-    FORCEINLINE const KeyType& Key() const
+    FORCEINLINE const KeyType& GetKey() const
     {
         return First;
     }
-    FORCEINLINE ValueType& Value()
+    FORCEINLINE ValueType& GetValue()
     {
         return Second;
     }
-    FORCEINLINE const ValueType& Value() const
+    FORCEINLINE const ValueType& GetValue() const
     {
         return Second;
     }
+};
+
+template<typename Key, typename Value>
+class TMap
+{
+public:
+    TArray<TSetElement<TPair<Key, Value>>>                     Data;
+    char UnknownData[0x40];
 };
 
 template <typename PtrType>

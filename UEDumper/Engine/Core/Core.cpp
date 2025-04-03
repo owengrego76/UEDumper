@@ -440,13 +440,13 @@ bool EngineCore::generateEnum(const UEnum* object, std::vector<EngineStructs::En
 	for (int i = 0; i < names.size(); i++)
 	{
 		auto& name = names[i];
-		if (name.Value() > maxNum && i != names.size() - 1) maxNum = name.Value();
+		if (name.GetValue() > maxNum && i != names.size() - 1) maxNum = name.GetValue();
 
-		auto fname = FNameToString(name.Key());
+		auto fname = FNameToString(name.GetKey());
 		std::ranges::replace(fname, ':', '_');
 
 		if (!fname.ends_with("_MAX"))
-			eEnum.members.push_back(std::pair(fname, name.Value()));
+			eEnum.members.push_back(std::pair(fname, name.GetValue()));
 	}
 	eEnum.type = setEnumSizeForValue(maxNum);
 	eEnum.size = getEnumSizeFromType(eEnum.type);
