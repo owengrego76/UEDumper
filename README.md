@@ -19,7 +19,7 @@
 <h2>Features</h2>
 <ul>
 <li>Rich GUI with the help of the ImGui library.</li>
-<li>Unreal Engine 4.19 - 5.3.0 support without having to modify any internal structures of the code.</li>
+<li>Unreal Engine 4.19 - 5.4.0 support without having to modify any internal structures of the code.</li>
 <li>SDK generator and editor.</li>
 <li>New MDK type generator.</li>
 <li>Live editor to read/write the games' memory.</li>

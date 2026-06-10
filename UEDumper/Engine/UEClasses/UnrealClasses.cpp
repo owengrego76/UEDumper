@@ -272,9 +272,24 @@ UClass* UStruct::staticClass()
 
 std::vector<TPair<FName, int64_t>> UEnum::getNames() const
 {
-    std::vector<TPair<FName, int64_t>> vec(Names.Count);
+    std::vector<TPair<FName, int64_t>> vec;
+#if UE_VERSION >= UE_5_06
+    vec.reserve(Names.NumValues);
 
+    const FName* NamesPtr_InGame = reinterpret_cast<FName*>(reinterpret_cast<uintptr_t>(Names.Names) & FNameData::MaskPointer);
+    FName* NamesBuffer = static_cast<FName*>(calloc(Names.NumValues, sizeof(FName)));
+    Memory::read(NamesPtr_InGame, NamesBuffer, Names.NumValues * sizeof(FName));
+
+    const int64_t* ValuesPtr_InGame = reinterpret_cast<int64_t*>(reinterpret_cast<uintptr_t>(Names.Values) & FNameData::MaskPointer);
+    int64_t* ValuesBuffer = static_cast<int64_t*>(calloc(Names.NumValues, sizeof(int64_t)));
+    Memory::read(ValuesPtr_InGame, ValuesBuffer, Names.NumValues * sizeof(int64_t));
+
+    for (int i = 0; i < Names.NumValues; i++)
+        vec.push_back(TPair{ NamesBuffer[i], ValuesBuffer[i] });
+#else
+    vec.reserve(Names.Count);
     Memory::read(Names.Data, vec.data(), sizeof(TPair<FName, int64_t>) * Names.Count);
+#endif
 
     return vec;
 }

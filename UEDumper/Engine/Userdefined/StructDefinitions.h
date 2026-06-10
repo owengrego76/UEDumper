@@ -81,7 +81,11 @@ inline void overrideStructs()
 	uField.superNames = std::vector<std::string>{ "UObject" };
 	constexpr int uFieldOffet = sizeof(UObject);
 	uField.definedMembers = std::vector<EngineStructs::Member>{
-		{{true,		PropertyType::ObjectProperty,	"UField"},		"Next",				uFieldOffet, 8}
+		{{true,		PropertyType::ObjectProperty,	"UField"},		"Next",				uFieldOffet, 8},
+	#if UE_VERSION >= UE_4_22
+		{{false,		PropertyType::ObjectProperty,	"FStructBaseChain**"},		"StructBaseChainArray",				uFieldOffet+8, 8},
+		{{false,		PropertyType::IntProperty,	TYPE_I32},		"NumStructBasesInChainMinusOne",				uFieldOffet+8+8, 8}
+	#endif
 	};
 	//add the struct/class
 	EngineCore::overrideStruct(uField);
@@ -342,6 +346,20 @@ inline void addStructs()
 	};
 	//add it
 	EngineCore::createStruct(Tmap);
+	
+	EngineStructs::Struct StructBaseChain;
+	StructBaseChain.fullName = "/Custom/FStructBaseChain";
+	StructBaseChain.cppName = "FStructBaseChain";
+	StructBaseChain.isClass = false;
+	StructBaseChain.size = sizeof(FStructBaseChain);
+	StructBaseChain.maxSize = StructBaseChain.size;
+	StructBaseChain.noFixedSize = true;
+	StructBaseChain.definedMembers = std::vector<EngineStructs::Member>{
+		{{false,		PropertyType::ObjectProperty,		"FStructBaseChain**"},		"StructBaseChainArray",	0, 8},
+		{{false,		PropertyType::IntProperty,		TYPE_I32},		"NumStructBasesInChainMinusOne",	8, 8},
+	};
+	//add it
+	EngineCore::createStruct(StructBaseChain);
 }
 
 inline void addEnums()

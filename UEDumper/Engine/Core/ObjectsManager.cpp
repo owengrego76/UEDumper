@@ -42,7 +42,7 @@ uint64_t ObjectsManager::getUObjectPtrByIndex(int index)
 		return 0;
 	}
 
-	return *reinterpret_cast<uint64_t*>(gUObjectManager.pGObjectPtrArray + (index * FUOBJECTITEM_SIZE));
+	return *reinterpret_cast<uint64_t*>(gUObjectManager.pGObjectPtrArray + (index * FUOBJECTITEM_SIZE) + FUOBJECTITEM_OBJECTPTR_OFFSET);
 }
 
 void ObjectsManager::STOP_OPERATION()
@@ -233,7 +233,7 @@ void ObjectsManager::copyUBigObjects(int64_t& finishedBytes, int64_t& totalBytes
 	for (int32_t i = 0; i < gUObjectManager.UObjectArray.NumElements; i++)
 	{
 		//get the real UObject address
-		const uint64_t UObjectAddress = *reinterpret_cast<uint64_t*>(gUObjectManager.pGObjectPtrArray + i * FUOBJECTITEM_SIZE);
+		const uint64_t UObjectAddress = *reinterpret_cast<uint64_t*>(gUObjectManager.pGObjectPtrArray + (i * FUOBJECTITEM_SIZE) + FUOBJECTITEM_OBJECTPTR_OFFSET);
 		//this happens quite often, those objects just got deleted
 		//the array is like a block of cheese with holes
 		if (!UObjectAddress) {

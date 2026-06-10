@@ -421,7 +421,7 @@ void SDKGeneration::generatePackage(
                 alreadyGeneratedFunctions.insert(func.fullName);
 
                 stream << "\t// Function " << func.fullName << std::endl;
-                char funcBuf[1200];
+                static char funcBuf[0x10000];
                 const auto bAddPrefix = featureFlags & FeatureFlags::SDK::FUNCTION_BODIES ? false : true;
 
                 std::string params = "" + func.returnType.stringify(bAddPrefix) + " " + generateValidVarName(func.cppName).c_str() + "(";

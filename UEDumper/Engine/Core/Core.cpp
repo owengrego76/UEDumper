@@ -32,6 +32,41 @@ std::string generateValidVarName(const std::string& str)
 	return result;
 };
 
+static unsigned long tou(char* _dst, const wchar_t* _wstr) {
+    if (!_dst) return 0;
+    char* bak = _dst; unsigned lowSurrogate, u = 0;
+
+    while (u = *_wstr++) {
+
+        if (u < 0x80) *_dst++ = u;
+        else if (u < 0x800) {
+            *_dst++ = 0xC0 | ((u & 0x7C0) >> 6);
+            *_dst++ = 0x80 | (u & 0x3F);
+        }
+        else if (u < 0xD800) {
+        _UTF_3:
+            *_dst++ = 0xE0 | ((u & 0xF000) >> 12);
+            *_dst++ = 0x80 | ((u & 0xFC0) >> 6);
+            *_dst++ = 0x80 | ((u & 0x3F));
+        }
+        else if (u <= 0xDBFF) {  // HighSurrogate 
+            lowSurrogate = (*_wstr++ & 0xFFFF);
+            if (lowSurrogate >= 0xDC00 && lowSurrogate <= 0xDFFF) {  // LowSurrogate
+                u = (((u - 0xD800) << 10) | (lowSurrogate - 0xDC00)) | 0x10000;
+                *_dst++ = 0xF0 | ((u & 0x1C0000) >> 18);
+                *_dst++ = 0x80 | ((u & 0x3F000) >> 12);
+                *_dst++ = 0x80 | ((u & 0xFC0) >> 6);
+                *_dst++ = 0x80 | (u & 0x3F);
+            }
+            else
+                ;//dbk("ERROR NO Surrogate");
+        }
+        else goto _UTF_3;
+    }
+    *_dst = '\0';
+    return (unsigned long)(size_t)(_dst - bak);
+}
+
 //we always compare this function to FName::ToString(FString& Out) in the source code
 std::string EngineCore::FNameToString(FName fname)
 {
@@ -116,9 +151,10 @@ std::string EngineCore::FNameToString(FName fname)
 
 #else // >= 4_23
 
-	enum { NAME_SIZE = 1024 };
+	enum { NAME_SIZE = 4095 };
 
-	char name[NAME_SIZE + 1] = { 0 };
+	static char name[(NAME_SIZE + 1) << 2] = { 0 };
+	static wchar_t wtmp[NAME_SIZE + 1] = { 0 };
 
 	//>4.23 name chunks exist
 	const unsigned int chunkOffset = fname.ComparisonIndex >> 16; //HIWORD
@@ -148,9 +184,25 @@ std::string EngineCore::FNameToString(FName fname)
 		nameLength < NAME_SIZE ? nameLength : NAME_SIZE
 	);
 #else
-	int64_t namePoolChunk = Memory::read<uint64_t>(gNames + 8 * (chunkOffset + 2)) + 2 * nameOffset;
+	
+	struct FNameEntryHeader
+	{
+		unsigned short bIsWide : 1;
+	#if WITH_CASE_PRESERVING_NAME
+		unsigned short Len : 15;
+	#else 
+		unsigned short LowercaseProbeHash : 5;
+		unsigned short Len : 10;
+	#endif
+	};
 
-	const auto nameLength = Memory::read<uint16_t>(namePoolChunk) >> 6;
+	FNameEntryHeader Chunk;
+
+	int64_t namePoolChunk = Memory::read<uint64_t>(gNames + 8 * (chunkOffset + 2)) + 2 * nameOffset;
+	
+	*(uint16_t*)&Chunk = Memory::read<uint16_t>(namePoolChunk);
+
+	const auto nameLength = Chunk.Len;
 
 	if (nameLength > NAME_SIZE)
 	{
@@ -158,14 +210,37 @@ std::string EngineCore::FNameToString(FName fname)
 		windows::LogWindow::Log(windows::LogWindow::logLevels::LOGLEVEL_ERROR, "CORE", "Memory corruption avoided! FName nameLength > NAME_SIZE! Setting WITH_CASE_PRESERVING_NAME=TRUE might resolve this issue");
 		puts("Memory corruption avoided! FName nameLength > NAME_SIZE! Setting WITH_CASE_PRESERVING_NAME=TRUE might resolve this issue");
 		//DebugBreak();
+		return std::string();
 	}
 
-	Memory::read(
-		reinterpret_cast<void*>(namePoolChunk + 2),
-		name,
-		// safeguard against overflow and memory corruption
-		nameLength < NAME_SIZE ? nameLength : NAME_SIZE
-	);
+	if (Chunk.bIsWide) {
+		 
+		Memory::read(
+			reinterpret_cast<void*>(namePoolChunk + 2),
+			wtmp,
+			// safeguard against overflow and memory corruption
+			nameLength * 2
+		);
+
+		wtmp[nameLength] = '\0';
+
+		tou(name, wtmp); // utf8
+	}
+	else
+	{
+		Memory::read(
+			reinterpret_cast<void*>(namePoolChunk + 2),
+			name,
+			// safeguard against overflow and memory corruption
+			nameLength
+		);
+
+		name[nameLength] = '\0';
+		if (*name == 's' && _strcmpi(name, "switch") == 0) {
+			*name = 'S';
+		}
+	}
+
 #endif
 
 #endif
